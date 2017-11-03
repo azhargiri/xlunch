@@ -1,13 +1,14 @@
 #!/bin/bash
 
-APPS=/usr/share/applications
-ICONS=/usr/share/icons/hicolor
+APPS="/usr/share/applications $HOME/.local/share/applications"
+ICON_APPLICATIONS="/usr/share/icons/hicolor $HOME/.local/share/icons/hicolor /usr/share/pixmaps $HOME/.local/share/pixmaps/"
 SIZE=48
+ICONS="$(find $ICON_APPLICATIONS | grep -E "($SIZE"x"$SIZE|pixmaps)")"
 
 echo "Generating config file from $APPS ..." >&2
 
 find $APPS -name "*.desktop" | while read DESKTOPFILE; do
-   FDATA="$(cat $DESKTOPFILE)"
+   FDATA="$(cat "$DESKTOPFILE")"
    NAME="$(echo "$FDATA" | grep -i "^Name=" | head -n 1 | cut -d "=" -f 2-)"
    EXEC="$(echo "$FDATA" | grep -i "^Exec=" | head -n 1 | cut -d "=" -f 2-)"
    ICON="$(echo "$FDATA" | grep -i "^Icon=" | head -n 1 | cut -d "=" -f 2-)"
@@ -18,7 +19,11 @@ find $APPS -name "*.desktop" | while read DESKTOPFILE; do
    fi
 
    if [ "$ICON" != "" ]; then
-      ICON="$(find "$ICONS" | grep $SIZE"x"$SIZE | grep $ICON"[.]png" | head -n 1)"
+	   # if $ICON provided as absolute path, use as is
+	   if [ ! $(echo "$ICON" | grep "^/" | grep -E "(png|jpg|jpeg)$") ]; then
+		  ICON="$(echo "$ICONS" | grep -E $ICON"[.](png|jpg|jpeg)" | head -n 1)"
+	  fi
+
       if [ "$ICON" != "" -a "$EXEC" != "" -a "$NAME" != "" ]; then
          echo "$NAME;$ICON;$EXEC"
       fi
